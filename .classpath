@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="lib"/>
+	<classpathentry kind="src" path="resources"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="lib" path="lib/engine-gecko.jar"/>
+	<classpathentry kind="lib" path="lib/engine-ie.jar"/>
+	<classpathentry kind="lib" path="lib/engine-webkit.jar"/>
+	<classpathentry kind="lib" path="lib/javax.mail.jar"/>
+	<classpathentry kind="lib" path="lib/jniwrap-native.jar"/>
+	<classpathentry kind="lib" path="lib/junit-4.8.2.jar"/>
+	<classpathentry kind="lib" path="lib/jxbrowser-2.5.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-1.2.15.jar"/>
+	<classpathentry kind="lib" path="lib/MozillaGlue.jar"/>
+	<classpathentry kind="lib" path="lib/MozillaInterfaces.jar"/>
+	<classpathentry kind="lib" path="lib/mshtml.jar"/>
+	<classpathentry kind="lib" path="lib/runtime.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.5.8.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-log4j12-1.5.8.jar"/>
+	<classpathentry kind="lib" path="lib/tuxpack-0.2.jar"/>
+	<classpathentry kind="lib" path="lib/webspec.jar"/>
+	<classpathentry kind="lib" path="lib/winpack-3.8.jar"/>
+	<classpathentry kind="lib" path="lib/xulrunner-linux.jar"/>
+	<classpathentry kind="lib" path="lib/xulrunner-linux64.jar"/>
+	<classpathentry kind="lib" path="lib/xulrunner-mac.jar"/>
+	<classpathentry kind="lib" path="lib/xulrunner-windows.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
