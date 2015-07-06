@@ -11,12 +11,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.mail.BodyPart;
+import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Store;
+import javax.mail.Flags.Flag;
+import javax.mail.search.FlagTerm;
+
+import org.kentfieldschools.appleidbot.*;
 
 public class AppleIdMailboxProcessor {
 	
@@ -25,9 +30,12 @@ public class AppleIdMailboxProcessor {
 	String fileName = null; 
 	String accountEmailAddress = null;
 	String accountPassword = null;
+	String appleIdPassword = null;
 	FileWriter writer = null;
+	AppleIdBrowserBot browser = null;
+	String EMPTY_ARRAY[] = { };
 
-	AppleIdMailboxProcessor(String email, String password, String fname) {
+	AppleIdMailboxProcessor(String email, String password, String applePassword, String fname) {
 		try {
 			readProperties();
 		} catch (IOException ex) {
@@ -42,6 +50,10 @@ public class AppleIdMailboxProcessor {
 		if (password != null && !password.isEmpty()) {
 			accountPassword = password;
 		}
+		if (applePassword != null && !applePassword.isEmpty()) {
+			appleIdPassword = applePassword;
+		}
+		browser = new AppleIdBrowserBot(null, null);
 	}
 
 	private void readProperties() throws IOException {
@@ -55,7 +67,9 @@ public class AppleIdMailboxProcessor {
 			accountEmailAddress = prop.getProperty("accountEmailAddress");
 			System.out.println("email set to " + accountEmailAddress);
 			accountPassword = prop.getProperty("accountPassword");
-			System.out.println("password set to " + accountPassword);
+			System.out.println("account password set to " + accountPassword);
+			appleIdPassword = prop.getProperty("appleIdPassword");
+			System.out.println("Apple ID password set to " + appleIdPassword);
 		} else {
 			System.out.println("could not load " + propFileName);
 		}
@@ -76,27 +90,44 @@ public class AppleIdMailboxProcessor {
 		Store store = session.getStore();
 		store.connect("imap.gmail.com", accountEmailAddress, accountPassword);
 		Folder inbox = store.getFolder("INBOX");
-		inbox.open(Folder.READ_ONLY);
-		for (int i = 0; i < inbox.getMessageCount(); i++) {
-			Message msg = inbox.getMessage(inbox.getMessageCount() - i);
+		inbox.open(Folder.READ_WRITE);
+		
+		Message messages[] = inbox.search(new FlagTerm(
+                    new Flags(Flag.SEEN), false));
+		for (int i = 0; i < messages.length; i++) {
+			Message msg = messages[i];
 			String subject = msg.getSubject();
 			if (subject.equals("Verify your Apple ID.")) {
 				// System.out.println(msg);
+				// This marks the message as SEEN
 				Multipart multi = (Multipart) msg.getContent();
+				boolean markAsUnseen = true;
 				int parts = multi.getCount();
 				for (int j = 0; j < parts; j++) {
 					BodyPart thePart = multi.getBodyPart(j);
 					String contentType = thePart.getContentType();
 					if (contentType.startsWith("TEXT/PLAIN")) {
-						this.writePartToFile(thePart);
+						String [] emailAndLink = this.getEmailAndLink(thePart);
+						if (emailAndLink.length == 2) {
+							int msgnum = msg.getMessageNumber();
+							String emailAddress = emailAndLink[0];
+							String linkUrl = emailAndLink[1];
+							AppleIdBrowserBot.ConfirmationResults results = browser.confirmAppleId(linkUrl, appleIdPassword);
+							System.out.println("Message Number " + String.valueOf(msgnum) + ", Apple ID " + emailAddress + ", results were " + results);
+							markAsUnseen = false;
+						}
 					}
+				}
+				if (markAsUnseen) {
+					msg.setFlag(Flag.SEEN, false);
 				}
 			}
 		}
 		writer.close();
+		browser.close();
 	}
 
-	private void writePartToFile(BodyPart thePart) throws IOException,
+	private String [] getEmailAndLink(BodyPart thePart) throws IOException,
 			MessagingException {
 		InputStream is = thePart.getInputStream();
 		StringBuilder inputStringBuilder = new StringBuilder();
@@ -112,18 +143,32 @@ public class AppleIdMailboxProcessor {
 		Matcher emailMatcher = emailPattern.matcher(s);
 		Matcher linkMatcher = linkPattern.matcher(s);
 		if (emailMatcher.find() && linkMatcher.find()) {
-			String emailAddress = emailMatcher.group(1);
-			String linkUrl = linkMatcher.group(1);
-			System.out.println(emailAddress + "," + linkUrl);
-
-			writer.write(emailAddress + "," + linkUrl + "\n");
+			String retval[] = {
+				emailMatcher.group(1),
+				linkMatcher.group(1) 
+			};
+			return retval;
 		} else {
 			System.out.println("no matches in " + s);
+			return EMPTY_ARRAY;
 		}
 	}
+	
+	private String [] writePartToFile(BodyPart thePart) throws IOException,
+			MessagingException {
+			String [] emailAndLink = this.getEmailAndLink(thePart);
+			if (emailAndLink.length == 2) {
+				String emailAddress = emailAndLink[0];
+				String linkUrl = emailAndLink[1];
+	
+				System.out.println(emailAddress + "," + linkUrl);
+				writer.write(emailAddress + "," + linkUrl + "\n");
+			}
+			return emailAndLink;
+    }
 
 	public static void main(String[] args) {
-		AppleIdMailboxProcessor confirm = new AppleIdMailboxProcessor(null, null, null);
+		AppleIdMailboxProcessor confirm = new AppleIdMailboxProcessor(null, null, null, null);
 		try {
 			confirm.parseInboxToFile();
 		} catch (Exception mex) {

@@ -12,12 +12,12 @@ import org.watij.webspec.dsl.Tag;
 import org.watij.webspec.dsl.WebSpec;
 
 public class AppleIdBrowserBot {
-	private static Logger LOGGER = Logger.getLogger(AppleIdBrowserBot.class
-			.getSimpleName());
-
 	public enum ConfirmationResults {
 		PARSE_FAILED, ALREADY_VERIFIED, EXPIRED_AND_RESEND_FAILED, EXPIRED_AND_RESENT, CONFIRMATION_FAILED, CONFIRMATION_SUCCEEDED
 	};
+
+	private static Logger LOGGER = Logger.getLogger(AppleIdBrowserBot.class
+			.getSimpleName());
 
 	WebSpec spec = null;
 	String appleIdPassword = null;
@@ -64,8 +64,14 @@ public class AppleIdBrowserBot {
 		}
 		return spec;
 	}
+	
+	public void close() {
+		if (spec != null) {
+			spec.closeAll();
+		}
+	}
 
-	private ConfirmationResults confirmAppleId(String url, String password) {
+	public ConfirmationResults confirmAppleId(String url, String password) {
 
 		ConfirmationResults results = ConfirmationResults.PARSE_FAILED;
 		boolean parsed = true;
@@ -162,7 +168,6 @@ public class AppleIdBrowserBot {
 				}
 			}
 		}
-		getSpec().closeAll();
 		return results;
 	}
 
@@ -186,6 +191,7 @@ public class AppleIdBrowserBot {
 			}
 		}
 		fr.close();
+		this.close();
 	}
 
 	public static void main(String[] args) throws IOException {
